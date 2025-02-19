@@ -308,4 +308,6 @@ class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
         return self.path.stem
 
 
-BatchInstanceSourceConfig = InstancesFromHuggingFace | InstancesFromFile | SWEBenchInstances | ExpertInstancesFromFile
+BatchInstanceSourceConfig = (
+    InstancesFromHuggingFace | InstancesFromFile | SWEBenchInstances | ExpertInstancesFromFile | AbstractInstanceSource
+)
