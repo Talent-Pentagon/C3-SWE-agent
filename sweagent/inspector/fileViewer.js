@@ -39,7 +39,6 @@ function createTrajectoryItem(item, index) {
     if (!text) {
       return "";
     }
-    console.log(text);
     return text
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
