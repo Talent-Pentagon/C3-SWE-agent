@@ -37,7 +37,6 @@ function createTrajectoryItem(item, index) {
 
   const escapeHtml = (text) => {
     if (!text) {
-      // Raise exception
       return "";
     }
     console.log(text);
