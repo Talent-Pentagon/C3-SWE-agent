@@ -36,6 +36,11 @@ function createTrajectoryItem(item, index) {
   const hasMessages = item.messages && item.messages.length > 0;
 
   const escapeHtml = (text) => {
+    if (!text) {
+      // Raise exception
+      return "";
+    }
+    console.log(text);
     return text
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
