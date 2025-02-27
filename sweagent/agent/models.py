@@ -32,6 +32,7 @@ from sweagent.exceptions import (
     FunctionCallingFormatError,
     InstanceCallLimitExceededError,
     InstanceCostLimitExceededError,
+    ModelConfigurationError,
     TotalCostLimitExceededError,
 )
 from sweagent.tools.tools import ToolConfig
@@ -557,7 +558,7 @@ class LiteLLMModel(AbstractModel):
                     " does not support function calling, you can use `parse_function='thought_action'` instead. "
                     "See https://swe-agent.com/latest/faq/ for more information."
                 )
-                raise ValueError(msg)
+                raise ModelConfigurationError(msg)
         self.model_max_input_tokens = self.config.max_input_tokens or litellm.model_cost.get(self.config.name, {}).get(
             "max_input_tokens"
         )
@@ -673,7 +674,8 @@ class LiteLLMModel(AbstractModel):
                     "(local models, etc.), please make sure you set `per_instance_cost_limit` and "
                     "`total_cost_limit` to 0 to disable this safety check."
                 )
-                raise ValueError(msg)
+                self.logger.error(msg)
+                raise ModelConfigurationError(msg)
             cost = 0
         choices: litellm.types.utils.Choices = response.choices  # type: ignore
         n_choices = n if n is not None else 1
@@ -724,6 +726,7 @@ class LiteLLMModel(AbstractModel):
                     TypeError,
                     litellm.exceptions.AuthenticationError,
                     ContentPolicyViolationError,
+                    ModelConfigurationError,
                 )
             ),
         ):
