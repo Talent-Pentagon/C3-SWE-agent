@@ -129,6 +129,9 @@ class GenericAPIModelConfig(PydanticBaseModel):
     Set this to 0 to disable this check.
     """
 
+    disable_prompt_caching: bool = False
+    """If set to True, this will disable prompt caching for the model."""
+
     # pydantic
     model_config = ConfigDict(extra="forbid")
 
@@ -665,6 +668,7 @@ class LiteLLMModel(AbstractModel):
         except litellm.exceptions.BadRequestError as e:
             if "is longer than the model's context length" in str(e):
                 raise ContextWindowExceededError from e
+            self.logger.error(f"BadRequestError: {e}")
             raise
         self.logger.info(f"Response: {response}")
         try:
@@ -775,7 +779,7 @@ class LiteLLMModel(AbstractModel):
                 message = {"role": role, "content": history_item["content"], "tool_calls": tool_calls}
             else:
                 message = {"role": role, "content": history_item["content"]}
-            if "cache_control" in history_item:
+            if not self.config.disable_prompt_caching and "cache_control" in history_item:
                 message["cache_control"] = history_item["cache_control"]
             messages.append(message)
         n_cache_control = str(messages).count("cache_control")
