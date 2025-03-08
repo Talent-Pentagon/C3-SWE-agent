@@ -645,9 +645,7 @@ class LiteLLMModel(AbstractModel):
         completion_kwargs = self.config.completion_kwargs
         if self.lm_provider == "anthropic":
             completion_kwargs["max_tokens"] = self.model_max_output_tokens
-            completion_kwargs["extra_headers"] = {
-                'anthropic-beta': 'output-128k-2025-02-19'
-            }
+            completion_kwargs["extra_headers"] = {"anthropic-beta": "output-128k-2025-02-19"}
         try:
             response: litellm.types.utils.ModelResponse = litellm.completion(  # type: ignore
                 model=self.config.name,
