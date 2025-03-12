@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field
 from swerex.deployment.config import (
     DeploymentConfig,
     DockerDeploymentConfig,
-    ModalDeploymentConfig,
     DummyDeploymentConfig,
     LocalDeploymentConfig,
+    ModalDeploymentConfig,
 )
 from typing_extensions import Self
 
@@ -133,7 +133,7 @@ class SimpleBatchInstance(BaseModel):
 
         if isinstance(deployment, DockerDeploymentConfig):
             deployment.python_standalone_dir = "/root"  # type: ignore
-    
+
         return BatchInstance(
             env=EnvironmentConfig(deployment=deployment, repo=repo), problem_statement=problem_statement
         )
@@ -274,14 +274,16 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
         from datasets import load_dataset
 
         ds: list[dict[str, Any]] = load_dataset(self._get_huggingface_name(), split=self.split)  # type: ignore
-        
+
         if isinstance(self.deployment, DockerDeploymentConfig):
             self.deployment.platform = "linux/amd64"
 
-        if not isinstance(self.deployment, DockerDeploymentConfig) and not isinstance(self.deployment, ModalDeploymentConfig):
+        if not isinstance(self.deployment, DockerDeploymentConfig) and not isinstance(
+            self.deployment, ModalDeploymentConfig
+        ):
             msg = "Only docker and modal backends are supported for batch runs."
-            raise ValueError(msg)            
-    
+            raise ValueError(msg)
+
         instances = [
             SimpleBatchInstance.from_swe_bench(instance).to_full_batch_instance(self.deployment) for instance in ds
         ]
