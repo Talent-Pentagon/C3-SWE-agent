@@ -10,7 +10,6 @@ from swerex.deployment.config import (
     DockerDeploymentConfig,
     DummyDeploymentConfig,
     LocalDeploymentConfig,
-    ModalDeploymentConfig,
 )
 from typing_extensions import Self
 
@@ -277,12 +276,6 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
 
         if isinstance(self.deployment, DockerDeploymentConfig):
             self.deployment.platform = "linux/amd64"
-
-        if not isinstance(self.deployment, DockerDeploymentConfig) and not isinstance(
-            self.deployment, ModalDeploymentConfig
-        ):
-            msg = "Only docker and modal backends are supported for batch runs."
-            raise ValueError(msg)
 
         instances = [
             SimpleBatchInstance.from_swe_bench(instance).to_full_batch_instance(self.deployment) for instance in ds
