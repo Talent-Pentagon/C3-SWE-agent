@@ -168,7 +168,10 @@ class CTFProblemStatement(BaseModel):
         extra_fields.update(self.extra_fields)
         return extra_fields
 
-ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement | CTFProblemStatement
+
+ProblemStatementConfig = (
+    TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement | CTFProblemStatement
+)
 
 
 def problem_statement_from_simplified_input(

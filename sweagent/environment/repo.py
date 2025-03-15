@@ -180,14 +180,14 @@ class GithubRepoConfig(BaseModel):
     def get_reset_commands(self) -> list[str]:
         """Issued after the copy operation or when the environment is reset."""
         return _get_git_reset_commands(self.base_commit)
-    
+
 
 class CTFRepoConfig(BaseModel):
     path: Path
     challenge_json_filename: str = Field(default="challenge.json")
-    """The JSON file containing the CTF challenge. 
+    """The JSON file containing the CTF challenge.
     This filename should be a relative path inside the repository parent path.
-    """ 
+    """
 
     base_commit: str = Field(default="HEAD")
     """This field has no effect on CTF repo."""
@@ -203,7 +203,7 @@ class CTFRepoConfig(BaseModel):
     def repo_name(self) -> str:
         """Set automatically based on the repository name. Cannot be set."""
         return Path(self.path).resolve().name.replace(" ", "-").replace("'", "")
-    
+
     def model_post_init(self, __context: Any) -> None:
         json_data = (self.path / Path(self.challenge_json_filename)).read_text()
         self.files = from_json(json_data)["files"]
@@ -211,7 +211,9 @@ class CTFRepoConfig(BaseModel):
     def copy(self, deployment: AbstractDeployment):
         for file in self.files:
             asyncio.run(
-                deployment.runtime.upload(UploadRequest(source_path=str(self.path / Path(file)), target_path=f"/{self.repo_name}/{file}"))
+                deployment.runtime.upload(
+                    UploadRequest(source_path=str(self.path / Path(file)), target_path=f"/{self.repo_name}/{file}")
+                )
             )
         r = asyncio.run(deployment.runtime.execute(Command(command=f"chown -R root:root {self.repo_name}", shell=True)))
         if r.exit_code != 0:
@@ -247,7 +249,7 @@ def repo_from_simplified_input(
             return GithubRepoConfig(github_url=input, base_commit=base_commit)
         else:
             return LocalRepoConfig(path=Path(input), base_commit=base_commit)
-    if type == "ctf": 
+    if type == "ctf":
         return CTFRepoConfig(path=Path(input))
     msg = f"Unknown repo type: {type}"
     raise ValueError(msg)
