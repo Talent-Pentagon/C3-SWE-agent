@@ -149,16 +149,24 @@ class CTFProblemStatement(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         json_data = self.path.read_text()
-        self = self.model_validate(from_json(json_data))
+        model_dict = from_json(json_data)
+        self.name = model_dict["name"]
+        self.category = model_dict["category"]
+        self.files = model_dict["files"]
+        self.description = model_dict["description"]
+        self.flag = model_dict["flag"]
         if self.id is None:
             logger.info("Setting problem statement id to challenge category and name.")
             self.id = f"{self.category}_{self.name}"
+        self.model_validate(self)
 
     def get_problem_statement(self) -> str:
         return self.description
 
     def get_extra_fields(self) -> dict[str, Any]:
-        return self.model_dump() + self.extra_fields
+        extra_fields = self.model_dump()
+        extra_fields.update(self.extra_fields)
+        return extra_fields
 
 ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement | CTFProblemStatement
 

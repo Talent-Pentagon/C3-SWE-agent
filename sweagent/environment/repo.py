@@ -189,6 +189,9 @@ class CTFRepoConfig(BaseModel):
     This filename should be a relative path inside the repository parent path.
     """ 
 
+    base_commit: str = Field(default="HEAD")
+    """This field has no effect on CTF repo."""
+
     files: list[str] = None  # type: ignore
 
     type: Literal["ctf"] = "ctf"
@@ -202,11 +205,10 @@ class CTFRepoConfig(BaseModel):
         return Path(self.path).resolve().name.replace(" ", "-").replace("'", "")
     
     def model_post_init(self, __context: Any) -> None:
-        json_data = self.path.read_text()
+        json_data = (self.path / Path(self.challenge_json_filename)).read_text()
         self.files = from_json(json_data)["files"]
 
     def copy(self, deployment: AbstractDeployment):
-        self.check_valid_repo()
         for file in self.files:
             asyncio.run(
                 deployment.runtime.upload(UploadRequest(source_path=str(self.path / Path(file)), target_path=f"/{self.repo_name}/{file}"))
