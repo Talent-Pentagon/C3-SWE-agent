@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic_core import from_json
 
 from sweagent.utils.github import _get_problem_statement_from_github_issue, _parse_gh_issue_url
 from sweagent.utils.log import get_logger
@@ -125,11 +126,45 @@ class GithubIssue(BaseModel):
         return self.extra_fields
 
 
-ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement
+class CTFProblemStatement(BaseModel):
+    path: Path
+
+    name: str = None  # type: ignore
+    category: Literal["crypto", "rev", "web", "forensics", "pwn", "misc"] = None  # type: ignore
+    description: str = None  # type: ignore
+    files: list[str] = None  # type: ignore
+    flag: str = None  # type: ignore
+
+    extra_fields: dict[str, Any] = Field(default_factory=dict)
+    """Any additional data to be added to the instance.
+    This data will be available when formatting prompt templates.
+    """
+
+    type: Literal["ctf_json"] = "ctf_json"
+    """Discriminator for (de)serialization/CLI. Do not change."""
+
+    id: str = None  # type: ignore
+
+    model_config = ConfigDict(extra="forbid")
+
+    def model_post_init(self, __context: Any) -> None:
+        json_data = self.path.read_text()
+        self = self.model_validate(from_json(json_data))
+        if self.id is None:
+            logger.info("Setting problem statement id to challenge category and name.")
+            self.id = f"{self.category}_{self.name}"
+
+    def get_problem_statement(self) -> str:
+        return self.description
+
+    def get_extra_fields(self) -> dict[str, Any]:
+        return self.model_dump() + self.extra_fields
+
+ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement | CTFProblemStatement
 
 
 def problem_statement_from_simplified_input(
-    *, input: str, type: Literal["text", "text_file", "github_issue"]
+    *, input: str, type: Literal["text", "text_file", "github_issue", "ctf_json"]
 ) -> ProblemStatementConfig:
     """Get a problem statement from an `input` string and a `type`.
 
@@ -143,6 +178,8 @@ def problem_statement_from_simplified_input(
         return FileProblemStatement(path=Path(input))
     elif type == "github_issue":
         return GithubIssue(github_url=input)
+    elif type == "ctf_json":
+        return CTFProblemStatement(path=Path(input))
     else:
         msg = f"Unknown problem statement type: {type}"
         raise ValueError(msg)
