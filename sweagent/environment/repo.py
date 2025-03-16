@@ -194,7 +194,7 @@ class CTFRepoConfig(BaseModel):
 
     files: list[str] = None  # type: ignore
 
-    type: Literal["ctf"] = "ctf"
+    type: Literal["ctf"]
     """Discriminator for (de)serialization/CLI. Do not change."""
 
     model_config = ConfigDict(extra="forbid")
