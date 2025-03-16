@@ -1,4 +1,4 @@
-"""[cyan][bold]Run SWE-agent on a single instance taken from github or similar.[/bold][/cyan]
+"""[cyan][bold]Run SWE-agent on a single instance taken from github, gitlab, or similar.[/bold][/cyan]
 
 [cyan][bold]=== BASIC OPTIONS ===[/bold][/cyan]
 
@@ -14,6 +14,20 @@ Basic usage: Run over a [bold][cyan]github issue[/bold][/cyan][green]:
 sweagent run --config config/default.yaml --agent.model.name "gpt-4o" \\
     --env.repo.github_url=https://github.com/SWE-agent/test-repo/ \\
     --problem_statement.github_url=https://github.com/SWE-agent/test-repo/issues/1
+[/green]
+
+Run over a [bold][cyan]gitlab issue[/bold][/cyan][green]:
+
+sweagent run --config config/default.yaml --agent.model.name "gpt-4o" \
+    --env.repo.gitlab_url=https://gitlab.com/jpaodev/test-repo \
+    --problem_statement.gitlab_url=https://gitlab.com/jpaodev/test-repo/-/issues/1
+[/green]
+
+Run over an [bold][cyan]auto-detected issue[/bold][/cyan] (GitHub or GitLab)[green]:
+
+sweagent run --config config/default.yaml --agent.model.name "gpt-4o" \
+    --env.repo.type=auto --env.repo.input=https://gitlab.com/jpaodev/test-repo \
+    --problem_statement.type=issue --problem_statement.input=https://gitlab.com/jpaodev/test-repo/-/issues/1
 [/green]
 
 By default this will start a docker container and run the agent in there.
