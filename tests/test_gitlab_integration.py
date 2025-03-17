@@ -139,7 +139,8 @@ def test_run_gitlab_matrix(tmpdir, swe_agent_test_repo_clone, problem_statement_
     elif problem_statement_source == "text":
         ps_args = ["--problem_statement.text='This is a test for GitLab integration'"]
     else:
-        raise ValueError(f"Unsupported problem statement source: {problem_statement_source}")
+        msg = f"Unsupported problem statement source: {problem_statement_source}"
+        raise ValueError(msg)
 
     # Use the local repo path from the fixture
     repo_args = ["--env.repo.path", str(swe_agent_test_repo_clone)]

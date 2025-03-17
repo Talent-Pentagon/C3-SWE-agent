@@ -74,7 +74,8 @@ def open_pr(*, logger, token, env: SWEEnv, issue_url, trajectory, _dry_run: bool
             _dry_run=_dry_run,
         )
     else:
-        raise ValueError(f"Unsupported repository type: {repo_type}")
+        msg = f"Unsupported repository type: {repo_type}"
+        raise ValueError(msg)
 
 
 # fixme: Bring back the ability to open the PR to a fork

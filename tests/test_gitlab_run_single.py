@@ -125,7 +125,7 @@ def test_run_single_with_gitlab(
 
     # Create RunSingleConfig and RunSingle
     rs_config = BasicCLI(RunSingleConfig).get_config(args)
-    rs = RunSingle.from_config(rs_config)
+    RunSingle.from_config(rs_config)
 
     # Run the test
     with tmpdir.as_cwd():
@@ -179,7 +179,7 @@ def test_run_single_with_auto_detected_gitlab(
 
     # Create RunSingleConfig and RunSingle
     rs_config = BasicCLI(RunSingleConfig).get_config(args)
-    rs = RunSingle.from_config(rs_config)
+    RunSingle.from_config(rs_config)
 
     # Run the test
     with tmpdir.as_cwd():
