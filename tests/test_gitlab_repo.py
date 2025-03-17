@@ -125,14 +125,14 @@ class TestGitlabRepoConfigWithToken:
         mock_deployment = mock.MagicMock()
         mock_runtime = mock.MagicMock()
         mock_deployment.runtime = mock_runtime
-        
+
         # Set up the mock chain to capture the command string
         def side_effect(command):
             # Store the command string for later assertion
             # The Command object has a 'command' attribute, not 'args'
             mock_command.command_string = command.command
             return mock.MagicMock()
-            
+
         mock_runtime.execute.side_effect = side_effect
 
         # Call copy method
@@ -140,13 +140,13 @@ class TestGitlabRepoConfigWithToken:
 
         # Verify asyncio.run was called
         mock_run.assert_called_once()
-        
+
         # Get the command string from our mock
         command_string = mock_command.command_string
 
         # Check that the command includes setting the PRIVATE-TOKEN header
         assert "git config --global http.extraHeader" in command_string
         assert "PRIVATE-TOKEN: test_token" in command_string
-        
+
         # Check that the command includes unsetting the header afterward
         assert "git config --global --unset http.extraHeader" in command_string
