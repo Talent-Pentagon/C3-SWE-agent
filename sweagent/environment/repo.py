@@ -221,7 +221,7 @@ class CTFRepoConfig(BaseModel):
 
     def get_reset_commands(self) -> list[str]:
         """Issued after the copy operation or when the environment is reset."""
-        return []
+        return ["git init"]
 
 
 RepoConfig = LocalRepoConfig | GithubRepoConfig | PreExistingRepoConfig | CTFRepoConfig
