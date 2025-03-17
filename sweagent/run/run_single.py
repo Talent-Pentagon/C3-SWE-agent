@@ -64,6 +64,7 @@ from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
 from sweagent.run.hooks.open_pr import OpenPRConfig, OpenPRHook
 from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import add_file_handler, get_logger
+from sweagent.environment.repo import GithubRepoConfig, GitlabRepoConfig
 
 
 class RunSingleActionConfig(BaseModel):
@@ -177,8 +178,10 @@ class RunSingle:
         config.output_dir.mkdir(parents=True, exist_ok=True)
         agent = get_agent_from_config(config.agent)
         agent.replay_config = config  # type: ignore[attr-defined]
+        env = SWEEnv.from_config(config.env)
+        config_repo = env.repo
         self = cls(
-            env=SWEEnv.from_config(config.env),
+            env=env,
             agent=agent,
             problem_statement=config.problem_statement,
             output_dir=config.output_dir,
@@ -186,8 +189,14 @@ class RunSingle:
         )
         self.add_hook(SaveApplyPatchHook(apply_patch_locally=config.actions.apply_patch_locally))
         if config.actions.open_pr:
-            self.logger.debug("Adding OpenPRHook")
-            self.add_hook(OpenPRHook(config.actions.pr_config))
+            if isinstance(config_repo, GithubRepoConfig): 
+                self.logger.debug("Adding GitHub OpenPRHook")
+                from sweagent.run.hooks.open_pr import OpenPRHook
+                self.add_hook(OpenPRHook(config.actions.pr_config))
+            elif isinstance(config_repo, GitlabRepoConfig):
+                self.logger.debug("Adding GitLab OpenMRHook")
+                from sweagent.run.hooks.open_pr_gitlab import OpenMRHook
+                self.add_hook(OpenMRHook(config.actions.pr_config))
         return self
 
     def add_hook(self, hook: RunHook) -> None:
