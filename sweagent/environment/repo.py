@@ -202,7 +202,8 @@ class GitlabRepoConfig(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         # Handle shorthand notation (owner/repo) by assuming gitlab.com
-        if self.gitlab_url.count("/") == 1 and not self.gitlab_url.startswith("http"):
+        # Only convert to HTTPS if it's not an SSH URL (git@...)
+        if self.gitlab_url.count("/") == 1 and not self.gitlab_url.startswith("http") and not self.gitlab_url.startswith("git@"):
             self.gitlab_url = f"https://gitlab.com/{self.gitlab_url}"
 
     @property
