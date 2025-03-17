@@ -1,7 +1,7 @@
 import os
 import random
 import shlex
-from typing import Literal, Optional, Union, Dict, Any
+from typing import Literal
 from urllib.parse import urlparse
 
 from ghapi.all import GhApi
@@ -12,18 +12,22 @@ from sweagent.run.hooks.abstract import RunHook
 from sweagent.types import AgentRunResult
 from sweagent.utils.github import (
     InvalidGithubURL,
-    _get_associated_commit_urls as _get_gh_associated_commit_urls,
     _get_gh_issue_data,
-    _parse_gh_issue_url,
     _is_github_issue_url,
+    _parse_gh_issue_url,
+)
+from sweagent.utils.github import (
+    _get_associated_commit_urls as _get_gh_associated_commit_urls,
 )
 from sweagent.utils.gitlab import (
     InvalidGitlabURL,
     _get_gitlab_issue_data,
-    _parse_gitlab_issue_url,
-    _get_associated_commit_urls as _get_gitlab_associated_commit_urls,
-    create_merge_request,
     _is_gitlab_issue_url,
+    _parse_gitlab_issue_url,
+    create_merge_request,
+)
+from sweagent.utils.gitlab import (
+    _get_associated_commit_urls as _get_gitlab_associated_commit_urls,
 )
 from sweagent.utils.log import get_logger
 
@@ -51,16 +55,24 @@ def open_pr(*, logger, token, env: SWEEnv, issue_url, trajectory, _dry_run: bool
         _dry_run: Whether to actually push anything or just simulate it
     """
     repo_type = _determine_repo_type(issue_url)
-    
+
     if repo_type == "github":
-        open_github_pr(logger=logger, token=token, env=env, github_url=issue_url, 
-                      trajectory=trajectory, _dry_run=_dry_run)
+        open_github_pr(
+            logger=logger, token=token, env=env, github_url=issue_url, trajectory=trajectory, _dry_run=_dry_run
+        )
     elif repo_type == "gitlab":
         # Get GitLab token and token type from environment variables
         gitlab_token = os.getenv("GITLAB_TOKEN", "")
         gitlab_token_type = os.getenv("GITLAB_TOKEN_TYPE", "oauth").lower()
-        open_gitlab_mr(logger=logger, token=gitlab_token, token_type=gitlab_token_type, env=env, 
-                      gitlab_url=issue_url, trajectory=trajectory, _dry_run=_dry_run)
+        open_gitlab_mr(
+            logger=logger,
+            token=gitlab_token,
+            token_type=gitlab_token_type,
+            env=env,
+            gitlab_url=issue_url,
+            trajectory=trajectory,
+            _dry_run=_dry_run,
+        )
     else:
         raise ValueError(f"Unsupported repository type: {repo_type}")
 
@@ -162,7 +174,9 @@ def open_github_pr(*, logger, token, env: SWEEnv, github_url, trajectory, _dry_r
 
 
 # fixme: Bring back the ability to open the MR to a fork
-def open_gitlab_mr(*, logger, token, token_type: str = "project", env: SWEEnv, gitlab_url, trajectory, _dry_run: bool = False) -> None:
+def open_gitlab_mr(
+    *, logger, token, token_type: str = "project", env: SWEEnv, gitlab_url, trajectory, _dry_run: bool = False
+) -> None:
     """Create Merge Request to GitLab repository
 
     Args:
@@ -178,10 +192,10 @@ def open_gitlab_mr(*, logger, token, token_type: str = "project", env: SWEEnv, g
     except InvalidGitlabURL as e:
         msg = "Data path must be a GitLab issue URL if open_pr is set to True."
         raise ValueError(msg) from e
-    
+
     issue_number = issue.get("iid", "")
     issue_title = issue.get("title", "")
-    
+
     branch_name = f"swe-agent-fix-#{issue_number}-" + str(random.random())[2:10]
     env.communicate(
         input="git config user.email 'noemail@swe-agent.com' && git config user.name 'SWE-agent'",
@@ -210,20 +224,20 @@ def open_gitlab_mr(*, logger, token, token_type: str = "project", env: SWEEnv, g
     gitlab_instance, owner, repo, _ = _parse_gitlab_issue_url(issue_url)
     # Default to origin remote
     remote = "origin"
-    
+
     # Handle token for push URL if needed
     if token:
         # Ensure we have a proper URL for the GitLab instance
         if not gitlab_instance.startswith("http"):
             gitlab_instance = f"https://{gitlab_instance}"
-        
+
         # Remove trailing slash if present
         gitlab_instance = gitlab_instance.rstrip("/")
-        
+
         # Parse the URL to get the hostname
         parsed_url = urlparse(gitlab_instance)
         hostname = parsed_url.netloc
-        
+
         # Set up git configuration based on token type
         if token_type.lower() in ["private", "personal"]:
             # For private/personal tokens, set the token as username with x-oauth-basic as password
@@ -236,24 +250,22 @@ def open_gitlab_mr(*, logger, token, token_type: str = "project", env: SWEEnv, g
             )
         else:  # Default to OAuth2
             fork_url = f"https://oauth2:{token}@{hostname}/{owner}/{repo}.git"
-            
+
         logger.debug(f"Using GitLab URL with token: {fork_url.replace(token, '***')}")
         env.communicate(
             input=f"git remote set-url origin {fork_url}",
             error_msg="Failed to update git remote",
             timeout=10,
         )
-    
+
     # Push the branch
     dry_run_prefix = "echo " if _dry_run else ""
     out = env.communicate(
         input=f"{dry_run_prefix} git push {remote} {branch_name}",
-        error_msg=(
-            "Failed to push branch to remote. Please check your token and permissions."
-        ),
+        error_msg=("Failed to push branch to remote. Please check your token and permissions."),
         timeout=10,
     )
-    
+
     # Clean up any git config we set for private tokens
     if token and token_type.lower() in ["private", "personal"]:
         env.communicate(
@@ -262,14 +274,14 @@ def open_gitlab_mr(*, logger, token, token_type: str = "project", env: SWEEnv, g
             timeout=10,
         )
     logger.debug(f"Pushed commit to {remote=} {branch_name=}: {out}")
-    
+
     # Create the merge request description
     body = (
         f"This is a Merge Request opened by AI tool [SWE Agent](https://github.com/SWE-agent/SWE-agent/) "
         f"to close [#{issue_number}]({issue_url}) ({issue_title}).\n\nCloses #{issue_number}."
     )
     body += "\n\n" + format_trajectory_markdown(trajectory)
-    
+
     # Create the merge request via the GitLab API
     if not _dry_run:
         try:
@@ -283,7 +295,7 @@ def open_gitlab_mr(*, logger, token, token_type: str = "project", env: SWEEnv, g
                 description=body,
                 token=token,
                 token_type=token_type,
-                draft=True
+                draft=True,
             )
             logger.info(
                 f"🎉 Merge Request created as a draft at {mr_info.get('web_url')}. Please review it carefully, push "
@@ -320,15 +332,15 @@ class OpenPRHook(RunHook):
     def on_instance_completed(self, result: AgentRunResult):
         if self.should_open_pr(result):
             # Get the issue URL based on the problem statement type
-            if hasattr(self._problem_statement, 'github_url'):
+            if hasattr(self._problem_statement, "github_url"):
                 issue_url = self._problem_statement.github_url
-            elif hasattr(self._problem_statement, 'gitlab_url'):
+            elif hasattr(self._problem_statement, "gitlab_url"):
                 issue_url = self._problem_statement.gitlab_url
             else:
                 # No issue URL found, can't open PR
                 self.logger.warning("No issue URL found in problem statement, can't open PR")
                 return
-                
+
             # Determine which token to use based on the issue URL
             if _is_github_issue_url(issue_url):
                 token = self._github_token
@@ -366,17 +378,17 @@ class OpenPRHook(RunHook):
                 "Not opening PR/MR because exit status was %s and not submitted.", result.info.get("exit_status")
             )
             return False
-        
+
         # Get the issue URL based on the problem statement type
-        if hasattr(self._problem_statement, 'github_url'):
+        if hasattr(self._problem_statement, "github_url"):
             issue_url = self._problem_statement.github_url
-        elif hasattr(self._problem_statement, 'gitlab_url'):
+        elif hasattr(self._problem_statement, "gitlab_url"):
             issue_url = self._problem_statement.gitlab_url
         else:
             # No issue URL found, can't open PR
             self.logger.warning("No issue URL found in problem statement, can't open PR")
             return False
-        
+
         # Handle GitHub issues
         if _is_github_issue_url(issue_url):
             try:
@@ -390,13 +402,15 @@ class OpenPRHook(RunHook):
                 if issue.locked:
                     self.logger.info("GitHub issue is locked. Skipping PR creation.")
                     return False
-                    
+
                 org, repo, issue_number = _parse_gh_issue_url(issue_url)
                 associated_commits = _get_gh_associated_commit_urls(org, repo, issue_number, token=self._github_token)
                 if associated_commits:
                     commit_url_strs = ", ".join(associated_commits)
                     if self._config.skip_if_commits_reference_issue:
-                        self.logger.info(f"GitHub issue already has associated commits (see {commit_url_strs}). Skipping PR creation.")
+                        self.logger.info(
+                            f"GitHub issue already has associated commits (see {commit_url_strs}). Skipping PR creation."
+                        )
                         return False
                     else:
                         self.logger.warning(
@@ -407,7 +421,7 @@ class OpenPRHook(RunHook):
                 return True
             except InvalidGithubURL:
                 self.logger.info("Invalid GitHub URL. Checking if it's a GitLab URL.")
-        
+
         # Handle GitLab issues
         if _is_gitlab_issue_url(issue_url):
             try:
@@ -415,7 +429,7 @@ class OpenPRHook(RunHook):
                 issue = _get_gitlab_issue_data(issue_url, token=self._gitlab_token)
                 # Debug log the issue data
                 self.logger.debug(f"GitLab issue data: {issue}")
-                
+
                 # Check if the issue is open - GitLab uses 'opened' for open issues
                 # Make sure to use the exact string comparison
                 issue_state = issue.get("state", "")
@@ -428,16 +442,22 @@ class OpenPRHook(RunHook):
                 if issue.get("discussion_locked"):
                     self.logger.info("GitLab issue is locked. Skipping MR creation.")
                     return False
-                    
+
                 gitlab_instance, owner, repo, issue_number = _parse_gitlab_issue_url(issue_url)
                 associated_commits = _get_gitlab_associated_commit_urls(
-                    gitlab_instance, owner, repo, issue_number, 
-                    token=self._gitlab_token, token_type=self._gitlab_token_type
+                    gitlab_instance,
+                    owner,
+                    repo,
+                    issue_number,
+                    token=self._gitlab_token,
+                    token_type=self._gitlab_token_type,
                 )
                 if associated_commits:
                     commit_url_strs = ", ".join(associated_commits)
                     if self._config.skip_if_commits_reference_issue:
-                        self.logger.info(f"GitLab issue already has associated commits (see {commit_url_strs}). Skipping MR creation.")
+                        self.logger.info(
+                            f"GitLab issue already has associated commits (see {commit_url_strs}). Skipping MR creation."
+                        )
                         return False
                     else:
                         self.logger.warning(
@@ -448,7 +468,7 @@ class OpenPRHook(RunHook):
                 return True
             except InvalidGitlabURL:
                 self.logger.info("Invalid GitLab URL.")
-        
+
         self.logger.info("URL is neither a valid GitHub nor GitLab issue URL. Skipping PR/MR creation.")
         return False
 

@@ -1,8 +1,8 @@
-import os
 import re
-import requests
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any
 from urllib.parse import urlparse
+
+import requests
 
 # Regular expressions for GitLab URLs - support any GitLab instance, not just gitlab.com
 GITLAB_ISSUE_URL_PATTERN = re.compile(r"(.*?)\/([^/]+)\/([^/]+)\/\-\/issues\/(\d+)")
@@ -19,10 +19,12 @@ def _is_gitlab_url(data_path: str) -> bool:
     """Check if data_path is an URL pointing to a GitLab instance"""
     parsed_url = urlparse(data_path)
     # Check if hostname contains 'gitlab' or if it's a known GitLab URL pattern
-    return ('gitlab' in parsed_url.netloc or 
-            GITLAB_REPO_URL_PATTERN.search(data_path) is not None or
-            GITLAB_ISSUE_URL_PATTERN.search(data_path) is not None or
-            GITLAB_MR_URL_PATTERN.search(data_path) is not None)
+    return (
+        "gitlab" in parsed_url.netloc
+        or GITLAB_REPO_URL_PATTERN.search(data_path) is not None
+        or GITLAB_ISSUE_URL_PATTERN.search(data_path) is not None
+        or GITLAB_MR_URL_PATTERN.search(data_path) is not None
+    )
 
 
 def _is_gitlab_repo_url(data_path: str) -> bool:
@@ -42,7 +44,7 @@ def _is_gitlab_mr_url(data_path: str) -> bool:
     return GITLAB_MR_URL_PATTERN.search(data_path) is not None
 
 
-def _parse_gitlab_issue_url(issue_url: str) -> Tuple[str, str, str, str]:
+def _parse_gitlab_issue_url(issue_url: str) -> tuple[str, str, str, str]:
     """
     Returns:
         gitlab_instance: The GitLab instance URL (e.g., 'https://gitlab.com')
@@ -62,7 +64,7 @@ def _parse_gitlab_issue_url(issue_url: str) -> Tuple[str, str, str, str]:
     return tuple(res)  # type: ignore
 
 
-def _parse_gitlab_repo_url(repo_url: str) -> Tuple[str, str, str]:
+def _parse_gitlab_repo_url(repo_url: str) -> tuple[str, str, str]:
     """
     Returns:
         gitlab_instance: The GitLab instance hostname (e.g., 'gitlab.com')
@@ -82,9 +84,11 @@ def _parse_gitlab_repo_url(repo_url: str) -> Tuple[str, str, str]:
     return res[1], res[2], res[3]
 
 
-def _get_gitlab_api_client(gitlab_instance: str, token: Optional[str] = None, token_type: str = "project") -> Dict[str, Any]:
+def _get_gitlab_api_client(
+    gitlab_instance: str, token: str | None = None, token_type: str = "project"
+) -> dict[str, Any]:
     """Returns a dictionary with methods to interact with GitLab API
-    
+
     Args:
         gitlab_instance: The GitLab instance URL or hostname (e.g., 'gitlab.com' or 'https://gitlab.com')
         token: Optional GitLab API token
@@ -102,14 +106,14 @@ def _get_gitlab_api_client(gitlab_instance: str, token: Optional[str] = None, to
             headers["PRIVATE-TOKEN"] = token
         else:  # Default to OAuth2 Bearer token
             headers["Authorization"] = f"Bearer {token}"
-    
+
     # Ensure we have a proper URL for the GitLab instance
     if not gitlab_instance.startswith("http"):
         gitlab_instance = f"https://{gitlab_instance}"
-    
+
     # Remove trailing slash if present
     gitlab_instance = gitlab_instance.rstrip("/")
-    
+
     # Simple API client implementation using requests
     # This could be replaced with python-gitlab library for more comprehensive support
     def make_request(method: str, endpoint: str, **kwargs):
@@ -117,7 +121,7 @@ def _get_gitlab_api_client(gitlab_instance: str, token: Optional[str] = None, to
         response = requests.request(method, url, headers=headers, **kwargs)
         response.raise_for_status()
         return response.json()
-    
+
     return {
         "get": lambda endpoint, **kwargs: make_request("GET", endpoint, **kwargs),
         "post": lambda endpoint, **kwargs: make_request("POST", endpoint, **kwargs),
@@ -126,9 +130,11 @@ def _get_gitlab_api_client(gitlab_instance: str, token: Optional[str] = None, to
     }
 
 
-def _get_project_id(gitlab_instance: str, owner: str, repo: str, token: Optional[str] = None, token_type: str = "project") -> str:
+def _get_project_id(
+    gitlab_instance: str, owner: str, repo: str, token: str | None = None, token_type: str = "project"
+) -> str:
     """Get the GitLab project ID for a repository
-    
+
     Args:
         gitlab_instance: The GitLab instance URL or hostname
         owner: Repository owner/namespace
@@ -143,11 +149,11 @@ def _get_project_id(gitlab_instance: str, owner: str, repo: str, token: Optional
     return str(project["id"])
 
 
-def _get_gitlab_issue_data(issue_url: str, *, token: str = "", token_type: str = "project") -> Dict[str, Any]:
+def _get_gitlab_issue_data(issue_url: str, *, token: str = "", token_type: str = "project") -> dict[str, Any]:
     """Returns GitLab issue data in the form of a dictionary.
     See https://docs.gitlab.com/ee/api/issues.html#get-issue
     for return format
-    
+
     Args:
         issue_url: URL of the GitLab issue
         token: GitLab API token
@@ -160,10 +166,16 @@ def _get_gitlab_issue_data(issue_url: str, *, token: str = "", token_type: str =
 
 
 def _get_problem_statement_from_gitlab_issue(
-    gitlab_instance: str, owner: str, repo: str, issue_number: str, *, token: Optional[str] = None, token_type: str = "project"
+    gitlab_instance: str,
+    owner: str,
+    repo: str,
+    issue_number: str,
+    *,
+    token: str | None = None,
+    token_type: str = "project",
 ) -> str:
     """Return problem statement from GitLab issue
-    
+
     Args:
         gitlab_instance: The GitLab instance URL or hostname
         owner: Repository owner/namespace
@@ -180,9 +192,11 @@ def _get_problem_statement_from_gitlab_issue(
     return f"{title}\n{description}\n"
 
 
-def _get_associated_commit_urls(gitlab_instance: str, owner: str, repo: str, issue_number: str, *, token: str = "", token_type: str = "project") -> List[str]:
+def _get_associated_commit_urls(
+    gitlab_instance: str, owner: str, repo: str, issue_number: str, *, token: str = "", token_type: str = "project"
+) -> list[str]:
     """Return the URLs of commits that would close an issue.
-    
+
     Args:
         gitlab_instance: The GitLab instance URL or hostname
         owner: Repository owner/namespace
@@ -193,26 +207,40 @@ def _get_associated_commit_urls(gitlab_instance: str, owner: str, repo: str, iss
     """
     client = _get_gitlab_api_client(gitlab_instance, token, token_type)
     project_id = _get_project_id(gitlab_instance, owner, repo, token, token_type)
-    
+
     # First check if there are any merge requests that mention the issue
     mrs = client["get"](f"projects/{project_id}/merge_requests", params={"search": f"#{issue_number}"})
-    
+
     commit_urls = []
     for mr in mrs:
         # Check if this MR would close the issue
-        if (f"fixes #{issue_number}" in mr.get("description", "").lower() or 
-            f"closes #{issue_number}" in mr.get("description", "").lower()):
+        if (
+            f"fixes #{issue_number}" in mr.get("description", "").lower()
+            or f"closes #{issue_number}" in mr.get("description", "").lower()
+        ):
             # Get the commits for this MR
             mr_commits = client["get"](f"projects/{project_id}/merge_requests/{mr['iid']}/commits")
             for commit in mr_commits:
                 commit_urls.append(commit["web_url"])
-    
+
     return commit_urls
 
 
-def create_merge_request(gitlab_instance: str, owner: str, repo: str, source_branch: str, target_branch: str, title: str, description: str, *, token: str = "", token_type: str = "project", draft: bool = True) -> Dict[str, Any]:
+def create_merge_request(
+    gitlab_instance: str,
+    owner: str,
+    repo: str,
+    source_branch: str,
+    target_branch: str,
+    title: str,
+    description: str,
+    *,
+    token: str = "",
+    token_type: str = "project",
+    draft: bool = True,
+) -> dict[str, Any]:
     """Create a merge request in GitLab
-    
+
     Args:
         gitlab_instance: The GitLab instance URL or hostname
         owner: Repository owner/namespace
@@ -224,13 +252,13 @@ def create_merge_request(gitlab_instance: str, owner: str, repo: str, source_bra
         token: GitLab API token
         token_type: Type of token ('oauth', 'private', or 'personal')
         draft: Whether to create the merge request as a draft
-        
+
     Returns:
         The created merge request data
     """
     client = _get_gitlab_api_client(gitlab_instance, token, token_type)
     project_id = _get_project_id(gitlab_instance, owner, repo, token, token_type)
-    
+
     # Create the merge request
     mr_data = {
         "source_branch": source_branch,
@@ -238,12 +266,12 @@ def create_merge_request(gitlab_instance: str, owner: str, repo: str, source_bra
         "title": title,
         "description": description,
     }
-    
+
     # Set as draft if requested
     if draft:
         # In GitLab, prefixing the title with 'Draft: ' or 'WIP: ' makes it a draft MR
         if not mr_data["title"].startswith("Draft: ") and not mr_data["title"].startswith("WIP: "):
             mr_data["title"] = f"Draft: {mr_data['title']}"
-    
+
     # Create the merge request
     return client["post"](f"projects/{project_id}/merge_requests", json=mr_data)

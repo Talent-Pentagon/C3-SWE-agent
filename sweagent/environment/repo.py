@@ -11,7 +11,7 @@ from swerex.runtime.abstract import Command, UploadRequest
 from typing_extensions import Self
 
 from sweagent.utils.github import _parse_gh_repo_url
-from sweagent.utils.gitlab import _parse_gitlab_repo_url, _is_gitlab_repo_url
+from sweagent.utils.gitlab import _is_gitlab_repo_url, _parse_gitlab_repo_url
 from sweagent.utils.log import get_logger
 
 logger = get_logger("swea-config", emoji="🔧")
@@ -216,11 +216,11 @@ class GitlabRepoConfig(BaseModel):
 
     def _get_url_with_token(self, token: str, token_type: str = "project") -> str:
         """Prepend gitlab token to URL based on token type
-        
+
         Args:
             token: GitLab token
             token_type: Type of token ('oauth', 'private', or 'personal')
-            
+
         Returns:
             URL with token included for authentication
         """
@@ -229,10 +229,10 @@ class GitlabRepoConfig(BaseModel):
         if "@" in self.gitlab_url:
             logger.warning("Cannot prepend token to URL. '@' found in URL")
             return self.gitlab_url
-            
+
         # Get the URL without protocol
         _, _, url_no_protocol = self.gitlab_url.partition("://")
-        
+
         # For OAuth2 tokens, include them in the URL
         # For private tokens and personal access tokens, they'll be used in headers
         # but we still need to return a URL that git can use
@@ -250,7 +250,7 @@ class GitlabRepoConfig(BaseModel):
         # Determine token type - default to OAuth2 but check for GITLAB_TOKEN_TYPE env var
         token_type = os.getenv("GITLAB_TOKEN_TYPE", "oauth").lower()
         url = self._get_url_with_token(gitlab_token, token_type)
-        
+
         # For private/personal tokens, we may need to set git config
         git_config_commands = []
         if token_type in ["private", "personal"] and gitlab_token:
@@ -258,7 +258,7 @@ class GitlabRepoConfig(BaseModel):
             git_config_commands = [
                 f"git config --global http.extraHeader 'PRIVATE-TOKEN: {gitlab_token}'",
             ]
-        
+
         asyncio.run(
             deployment.runtime.execute(
                 Command(
@@ -312,7 +312,9 @@ def repo_from_simplified_input(
     if type == "auto":
         if input.startswith("https://github.com/") or input.startswith("git@github.com"):
             return GithubRepoConfig(github_url=input, base_commit=base_commit)
-        elif input.startswith("https://gitlab.com/") or input.startswith("git@gitlab.com") or _is_gitlab_repo_url(input):
+        elif (
+            input.startswith("https://gitlab.com/") or input.startswith("git@gitlab.com") or _is_gitlab_repo_url(input)
+        ):
             return GitlabRepoConfig(gitlab_url=input, base_commit=base_commit)
         else:
             return LocalRepoConfig(path=Path(input), base_commit=base_commit)

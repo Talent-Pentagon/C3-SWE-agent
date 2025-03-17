@@ -7,7 +7,11 @@ from typing import Any, Literal, Protocol
 from pydantic import BaseModel, ConfigDict, Field
 
 from sweagent.utils.github import _get_problem_statement_from_github_issue, _parse_gh_issue_url
-from sweagent.utils.gitlab import _get_problem_statement_from_gitlab_issue, _parse_gitlab_issue_url, _is_gitlab_issue_url
+from sweagent.utils.gitlab import (
+    _get_problem_statement_from_gitlab_issue,
+    _is_gitlab_issue_url,
+    _parse_gitlab_issue_url,
+)
 from sweagent.utils.log import get_logger
 
 logger = get_logger("swea-config", emoji="🔧")
@@ -152,9 +156,7 @@ class GitlabIssue(BaseModel):
         gitlab_instance, owner, repo, issue_number = _parse_gitlab_issue_url(self.gitlab_url)
         token_type = os.getenv("GITLAB_TOKEN_TYPE", "project")
         return _get_problem_statement_from_gitlab_issue(
-            gitlab_instance, owner, repo, issue_number, 
-            token=os.getenv("GITLAB_TOKEN"), 
-            token_type=token_type
+            gitlab_instance, owner, repo, issue_number, token=os.getenv("GITLAB_TOKEN"), token_type=token_type
         )
 
     def get_extra_fields(self) -> dict[str, Any]:

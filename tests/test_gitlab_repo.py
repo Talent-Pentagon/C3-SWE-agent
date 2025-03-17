@@ -1,9 +1,5 @@
 import os
-from pathlib import Path
 from unittest import mock
-
-import pytest
-from git import Repo as GitRepo
 
 from sweagent.environment.repo import (
     GitlabRepoConfig,
@@ -21,15 +17,15 @@ class TestGitlabRepoConfig:
         assert config.gitlab_url == "https://gitlab.com/user/repo"
         assert config.base_commit == "HEAD"
         assert config.type == "gitlab"
-        
+
         # Test with shorthand notation
         config = GitlabRepoConfig(gitlab_url="user/repo")
         assert config.gitlab_url == "https://gitlab.com/user/repo"
-        
+
         # Test with custom base commit
         config = GitlabRepoConfig(gitlab_url="user/repo", base_commit="main")
         assert config.base_commit == "main"
-        
+
         # Test with custom GitLab instance
         config = GitlabRepoConfig(gitlab_url="https://gitlab.example.com/user/repo")
         assert config.gitlab_url == "https://gitlab.example.com/user/repo"
@@ -39,7 +35,7 @@ class TestGitlabRepoConfig:
         # Test with gitlab.com
         config = GitlabRepoConfig(gitlab_url="https://gitlab.com/user/repo")
         assert config.repo_name == "gitlab_com__user__repo"
-        
+
         # Test with custom GitLab instance
         config = GitlabRepoConfig(gitlab_url="https://gitlab.example.com/user/repo")
         assert config.repo_name == "gitlab_example_com__user__repo"
@@ -71,7 +67,7 @@ class TestGitlabRepoConfig:
         assert commands[1] == "git restore ."
         assert commands[2] == "git reset --hard HEAD"
         assert commands[3] == "git clean -fdq"
-        
+
         # Test with custom base commit
         config = GitlabRepoConfig(gitlab_url="https://gitlab.com/user/repo", base_commit="main")
         commands = config.get_reset_commands()
@@ -83,46 +79,34 @@ class TestRepoFromSimplifiedInput:
 
     def test_explicit_gitlab_type(self):
         """Test with explicit gitlab type"""
-        config = repo_from_simplified_input(
-            input="https://gitlab.com/user/repo", type="gitlab"
-        )
+        config = repo_from_simplified_input(input="https://gitlab.com/user/repo", type="gitlab")
         assert isinstance(config, GitlabRepoConfig)
         assert config.gitlab_url == "https://gitlab.com/user/repo"
-        
+
         # Test with shorthand notation
-        config = repo_from_simplified_input(
-            input="user/repo", type="gitlab"
-        )
+        config = repo_from_simplified_input(input="user/repo", type="gitlab")
         assert isinstance(config, GitlabRepoConfig)
         assert config.gitlab_url == "https://gitlab.com/user/repo"
-        
+
         # Test with custom GitLab instance
-        config = repo_from_simplified_input(
-            input="https://gitlab.example.com/user/repo", type="gitlab"
-        )
+        config = repo_from_simplified_input(input="https://gitlab.example.com/user/repo", type="gitlab")
         assert isinstance(config, GitlabRepoConfig)
         assert config.gitlab_url == "https://gitlab.example.com/user/repo"
 
     def test_auto_detect_gitlab(self):
         """Test auto detection of GitLab URLs"""
         # Test with gitlab.com URL
-        config = repo_from_simplified_input(
-            input="https://gitlab.com/user/repo", type="auto"
-        )
+        config = repo_from_simplified_input(input="https://gitlab.com/user/repo", type="auto")
         assert isinstance(config, GitlabRepoConfig)
         assert config.gitlab_url == "https://gitlab.com/user/repo"
-        
+
         # Test with custom GitLab instance
-        config = repo_from_simplified_input(
-            input="https://gitlab.example.com/user/repo", type="auto"
-        )
+        config = repo_from_simplified_input(input="https://gitlab.example.com/user/repo", type="auto")
         assert isinstance(config, GitlabRepoConfig)
         assert config.gitlab_url == "https://gitlab.example.com/user/repo"
-        
+
         # Test with SSH URL
-        config = repo_from_simplified_input(
-            input="git@gitlab.com:user/repo.git", type="auto"
-        )
+        config = repo_from_simplified_input(input="git@gitlab.com:user/repo.git", type="auto")
         assert isinstance(config, GitlabRepoConfig)
         assert config.gitlab_url == "git@gitlab.com:user/repo.git"
 
@@ -135,21 +119,21 @@ class TestGitlabRepoConfigWithToken:
     def test_copy_with_private_token(self, mock_run):
         """Test copy method with private token"""
         config = GitlabRepoConfig(gitlab_url="https://gitlab.com/user/repo")
-        
+
         # Mock deployment
         mock_deployment = mock.MagicMock()
         mock_runtime = mock.MagicMock()
         mock_deployment.runtime = mock_runtime
-        
+
         # Call copy method
         config.copy(mock_deployment)
-        
+
         # Verify the command includes git config for private token
         mock_run.assert_called_once()
         command_args = mock_run.call_args[0][0].args[0]
-        
+
         # Check that the command includes setting the PRIVATE-TOKEN header
         assert "git config --global http.extraHeader 'PRIVATE-TOKEN: test_token'" in command_args
-        
+
         # Check that the command includes unsetting the header afterward
         assert "git config --global --unset http.extraHeader || true" in command_args
