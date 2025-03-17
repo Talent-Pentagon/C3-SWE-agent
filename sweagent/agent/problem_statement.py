@@ -145,7 +145,7 @@ class CTFProblemStatement(BaseModel):
     This data will be available when formatting prompt templates.
     """
 
-    type: Literal["ctf_json"] = "ctf_json"
+    type: Literal["ctf_json"]
     """Discriminator for (de)serialization/CLI. Do not change."""
 
     id: str = Field(default_factory=lambda data: "_".join([data["category"], data["name"]]))
