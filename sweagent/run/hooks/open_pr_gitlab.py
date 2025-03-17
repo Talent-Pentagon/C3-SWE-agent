@@ -10,11 +10,11 @@ from sweagent.run.hooks.abstract import RunHook
 from sweagent.types import AgentRunResult
 from sweagent.utils.gitlab import (
     InvalidGitlabURL,
+    _get_associated_commit_urls,
     _get_gitlab_issue_data,
     _is_gitlab_issue_url,
     _parse_gitlab_issue_url,
     create_merge_request,
-    _get_associated_commit_urls,
 )
 from sweagent.utils.log import get_logger
 
@@ -23,13 +23,15 @@ from sweagent.utils.log import get_logger
 
 
 # fixme: Bring back the ability to open the MR to a fork
-def open_mr(*, logger, token, token_type: str = "project", env: SWEEnv, gitlab_url, trajectory, _dry_run: bool = False) -> None:
+def open_mr(
+    *, logger, token, token_type: str = "project", env: SWEEnv, gitlab_url, trajectory, _dry_run: bool = False
+) -> None:
     """Create Merge Request to GitLab repository
 
     Args:
         trajectory: Trajectory of actions taken by the agent
         token: GitLab API token
-        token_type: Type of token ('oauth2', 'private', or 'personal'). 
+        token_type: Type of token ('oauth2', 'private', or 'personal').
                    - 'oauth2': OAuth 2.0 tokens (format varies)
                    - 'private'/'personal'/'project'/'group': Personal/Project/Group access tokens (start with 'glpat')
         env: SWE environment
@@ -156,8 +158,6 @@ def open_mr(*, logger, token, token_type: str = "project", env: SWEEnv, gitlab_u
             )
         except Exception as e:
             logger.error(f"Failed to create GitLab merge request: {e}")
-
-
 
 
 class OpenMRConfig(BaseModel):

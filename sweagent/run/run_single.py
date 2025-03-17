@@ -56,15 +56,15 @@ from sweagent.agent.problem_statement import (
     ProblemStatement,
     ProblemStatementConfig,
 )
+from sweagent.environment.repo import GithubRepoConfig, GitlabRepoConfig
 from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 from sweagent.run.common import AutoCorrectSuggestion as ACS
 from sweagent.run.common import BasicCLI, ConfigHelper, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
-from sweagent.run.hooks.open_pr import OpenPRConfig, OpenPRHook
+from sweagent.run.hooks.open_pr import OpenPRConfig
 from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import add_file_handler, get_logger
-from sweagent.environment.repo import GithubRepoConfig, GitlabRepoConfig
 
 
 class RunSingleActionConfig(BaseModel):
@@ -189,13 +189,15 @@ class RunSingle:
         )
         self.add_hook(SaveApplyPatchHook(apply_patch_locally=config.actions.apply_patch_locally))
         if config.actions.open_pr:
-            if isinstance(config_repo, GithubRepoConfig): 
+            if isinstance(config_repo, GithubRepoConfig):
                 self.logger.debug("Adding GitHub OpenPRHook")
                 from sweagent.run.hooks.open_pr import OpenPRHook
+
                 self.add_hook(OpenPRHook(config.actions.pr_config))
             elif isinstance(config_repo, GitlabRepoConfig):
                 self.logger.debug("Adding GitLab OpenMRHook")
                 from sweagent.run.hooks.open_pr_gitlab import OpenMRHook
+
                 self.add_hook(OpenMRHook(config.actions.pr_config))
         return self
 

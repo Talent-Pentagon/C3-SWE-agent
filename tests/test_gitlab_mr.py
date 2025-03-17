@@ -3,7 +3,6 @@ from unittest import mock
 
 import pytest
 
-from sweagent.agent.problem_statement import GitlabIssue
 from sweagent.run.hooks.open_pr_gitlab import (
     OpenMRConfig,
     OpenMRHook,
@@ -28,7 +27,10 @@ class TestOpenMRHookWithGitlab:
 
     @mock.patch("sweagent.utils.gitlab._get_project_id", return_value="123")
     @mock.patch("sweagent.utils.gitlab._get_gitlab_api_client")
-    @mock.patch("sweagent.utils.gitlab._parse_gitlab_issue_url", return_value=("https://gitlab.com", "jpaodev", "test-repo", "1"))
+    @mock.patch(
+        "sweagent.utils.gitlab._parse_gitlab_issue_url",
+        return_value=("https://gitlab.com", "jpaodev", "test-repo", "1"),
+    )
     @mock.patch("sweagent.utils.gitlab._is_gitlab_issue_url", return_value=True)
     def test_should_open_mr_gitlab_open_issue(
         self, mock_is_issue, mock_parse_url, mock_api_client, mock_project_id, agent_run_result
@@ -40,10 +42,10 @@ class TestOpenMRHookWithGitlab:
         hook._gitlab_token_type = "oauth2"
         hook._problem_statement = mock.Mock()
         hook._problem_statement.gitlab_url = "https://gitlab.com/jpaodev/test-repo/-/issues/1"
-        
+
         # Mock the GitLab API client
         mock_client = {"get": mock.Mock()}
-        
+
         # Set up different responses for different API calls
         def get_side_effect(*args, **kwargs):
             # For issue data
@@ -61,7 +63,7 @@ class TestOpenMRHookWithGitlab:
                 return []  # No merge requests that mention the issue
             # Default empty response
             return []
-            
+
         mock_client["get"].side_effect = get_side_effect
         mock_api_client.return_value = mock_client
 
@@ -71,7 +73,10 @@ class TestOpenMRHookWithGitlab:
 
     @mock.patch("sweagent.utils.gitlab._get_project_id", return_value="123")
     @mock.patch("sweagent.utils.gitlab._get_gitlab_api_client")
-    @mock.patch("sweagent.utils.gitlab._parse_gitlab_issue_url", return_value=("https://gitlab.com", "jpaodev", "test-repo", "1"))
+    @mock.patch(
+        "sweagent.utils.gitlab._parse_gitlab_issue_url",
+        return_value=("https://gitlab.com", "jpaodev", "test-repo", "1"),
+    )
     @mock.patch("sweagent.utils.gitlab._is_gitlab_issue_url", return_value=True)
     def test_should_open_mr_gitlab_closed_issue(
         self, mock_is_issue, mock_parse_url, mock_api_client, mock_project_id, agent_run_result
@@ -83,10 +88,10 @@ class TestOpenMRHookWithGitlab:
         hook._gitlab_token_type = "oauth2"
         hook._problem_statement = mock.Mock()
         hook._problem_statement.gitlab_url = "https://gitlab.com/jpaodev/test-repo/-/issues/1"
-        
+
         # Mock the GitLab API client
         mock_client = {"get": mock.Mock()}
-        
+
         # Set up different responses for different API calls
         def get_side_effect(*args, **kwargs):
             # For issue data
@@ -104,7 +109,7 @@ class TestOpenMRHookWithGitlab:
                 return []  # No merge requests that mention the issue
             # Default empty response
             return []
-            
+
         mock_client["get"].side_effect = get_side_effect
         mock_api_client.return_value = mock_client
 
