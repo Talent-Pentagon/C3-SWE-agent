@@ -129,11 +129,12 @@ class GithubIssue(BaseModel):
 class CTFProblemStatement(BaseModel):
     path: Path
 
-    name: str = None  # type: ignore
-    category: Literal["crypto", "rev", "web", "forensics", "pwn", "misc"] = None  # type: ignore
-    description: str = None  # type: ignore
-    files: list[str] = None  # type: ignore
-    flag: str = None  # type: ignore
+    json_data: dict[str, Any] = Field(default_factory=lambda data: from_json(data["path"].read_text()), frozen=True, exclude=True) 
+    name: str = Field(default_factory=lambda data: data["json_data"]["name"])
+    category: Literal["crypto", "rev", "web", "forensics", "pwn", "misc"] = Field(default_factory=lambda data: data["json_data"]["category"])
+    description: str = Field(default_factory=lambda data: data["json_data"]["description"])
+    files: list[str] = Field(default_factory=lambda data: data["json_data"]["files"])
+    flag: str = Field(default_factory=lambda data: data["json_data"]["flag"])
 
     extra_fields: dict[str, Any] = Field(default_factory=dict)
     """Any additional data to be added to the instance.
@@ -143,22 +144,9 @@ class CTFProblemStatement(BaseModel):
     type: Literal["ctf_json"] = "ctf_json"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
-    id: str = None  # type: ignore
+    id: str = Field(default_factory=lambda data: "_".join([data["category"], data["name"]]))
 
     model_config = ConfigDict(extra="forbid")
-
-    def model_post_init(self, __context: Any) -> None:
-        json_data = self.path.read_text()
-        model_dict = from_json(json_data)
-        self.name = model_dict["name"]
-        self.category = model_dict["category"]
-        self.files = model_dict["files"]
-        self.description = model_dict["description"]
-        self.flag = model_dict["flag"]
-        if self.id is None:
-            logger.info("Setting problem statement id to challenge category and name.")
-            self.id = f"{self.category}_{self.name}"
-        self.model_validate(self)
 
     def get_problem_statement(self) -> str:
         return self.description

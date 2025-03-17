@@ -192,8 +192,6 @@ class CTFRepoConfig(BaseModel):
     base_commit: str = Field(default="HEAD")
     """This field has no effect on CTF repo."""
 
-    files: list[str] = None  # type: ignore
-
     type: Literal["ctf"]
     """Discriminator for (de)serialization/CLI. Do not change."""
 
@@ -204,9 +202,10 @@ class CTFRepoConfig(BaseModel):
         """Set automatically based on the repository name. Cannot be set."""
         return Path(self.path).resolve().name.replace(" ", "-").replace("'", "")
 
-    def model_post_init(self, __context: Any) -> None:
-        json_data = (self.path / Path(self.challenge_json_filename)).read_text()
-        self.files = from_json(json_data)["files"]
+    @property
+    def files(self) -> list[str]:
+        json_data = (self.path / self.challenge_json_filename).read_text()
+        return from_json(json_data)["files"]
 
     def copy(self, deployment: AbstractDeployment):
         for file in self.files:
