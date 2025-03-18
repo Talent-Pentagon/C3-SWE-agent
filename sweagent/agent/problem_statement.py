@@ -13,6 +13,14 @@ from sweagent.utils.log import get_logger
 logger = get_logger("swea-config", emoji="🔧")
 
 
+def _get_ctf_json(data: dict[str, Any]) -> dict[str, Any]:
+    try:
+        return from_json(data["path"].read_text())
+    except Exception:
+        return dict()
+
+
+
 class ProblemStatement(Protocol):
     """A problem statement for a task."""
 
@@ -130,7 +138,7 @@ class CTFProblemStatement(BaseModel):
     path: Path
 
     json_data: dict[str, Any] = Field(
-        default_factory=lambda data: from_json(data["path"].read_text()) if "path" in data else dict(),
+        default_factory=_get_ctf_json,
         frozen=True,
         exclude=True,
     )
