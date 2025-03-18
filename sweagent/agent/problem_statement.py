@@ -130,25 +130,25 @@ class CTFProblemStatement(BaseModel):
     path: Path
 
     json_data: dict[str, Any] = Field(
-        default_factory=lambda data: from_json(data["path"].read_text()), frozen=True, exclude=True
+        default_factory=lambda data: from_json(data["path"].read_text()) if "path" in data else dict(), frozen=True, exclude=True
     )
-    name: str = Field(default_factory=lambda data: data["json_data"]["name"])
+    name: str = Field(default_factory=lambda data: data["json_data"].get("name"))
     category: Literal["crypto", "rev", "web", "forensics", "pwn", "misc"] = Field(
-        default_factory=lambda data: data["json_data"]["category"]
+        default_factory=lambda data: data["json_data"].get("category")
     )
-    description: str = Field(default_factory=lambda data: data["json_data"]["description"])
-    files: list[str] = Field(default_factory=lambda data: data["json_data"]["files"])
-    flag: str = Field(default_factory=lambda data: data["json_data"]["flag"])
+    description: str = Field(default_factory=lambda data: data["json_data"].get("description"))
+    files: list[str] = Field(default_factory=lambda data: data["json_data"].get("files"))
+    flag: str = Field(default_factory=lambda data: data["json_data"].get("flag"))
 
     extra_fields: dict[str, Any] = Field(default_factory=dict)
     """Any additional data to be added to the instance.
     This data will be available when formatting prompt templates.
     """
 
-    type: Literal["ctf_json"]
+    type: Literal["ctf_json"] = "ctf_json"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
-    id: str = Field(default_factory=lambda data: "_".join([data["category"], data["name"]]))
+    id: str = Field(default_factory=lambda data: "_".join([str(data["category"]), str(data["name"])]))
 
     model_config = ConfigDict(extra="forbid")
 
