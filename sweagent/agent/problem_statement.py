@@ -20,7 +20,6 @@ def _get_ctf_json(data: dict[str, Any]) -> dict[str, Any]:
         return dict()
 
 
-
 class ProblemStatement(Protocol):
     """A problem statement for a task."""
 
