@@ -130,7 +130,9 @@ class CTFProblemStatement(BaseModel):
     path: Path
 
     json_data: dict[str, Any] = Field(
-        default_factory=lambda data: from_json(data["path"].read_text()) if "path" in data else dict(), frozen=True, exclude=True
+        default_factory=lambda data: from_json(data["path"].read_text()) if "path" in data else dict(),
+        frozen=True,
+        exclude=True,
     )
     name: str = Field(default_factory=lambda data: data["json_data"].get("name"))
     category: Literal["crypto", "rev", "web", "forensics", "pwn", "misc"] = Field(
