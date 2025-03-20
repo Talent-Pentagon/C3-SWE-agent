@@ -13,7 +13,7 @@ If you install `swe-agent` without the `--editable` option, please make sure to 
 
 * `SWE_AGENT_CONFIG_DIR` (default `<PACKAGE>/config`)
 * `SWE_AGENT_TOOLS_DIR` (default `<PACKAGE>/tools`)
-* `SWE_AGENT_TRAJECTORY_DIR` (default `<PACKAGE>/tools`)
+* `SWE_AGENT_TRAJECTORY_DIR` (default `<PACKAGE>/trajectories`)
 
 In addition, the following env variables allow to configure the logging.
 
