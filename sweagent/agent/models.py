@@ -561,7 +561,7 @@ class LiteLLMModel(AbstractModel):
         self.stats = InstanceStats()
         self.tools = tools
         self.logger = get_logger("swea-lm", emoji="🤖")
-        
+
         if tools.use_function_calling:
             if not litellm.utils.supports_function_calling(model=self.config.name):
                 msg = (
@@ -582,7 +582,6 @@ class LiteLLMModel(AbstractModel):
             self.model_max_output_tokens = litellm.model_cost.get(self.config.name, {}).get("max_output_tokens")
 
         self.lm_provider = litellm.model_cost.get(self.config.name, {}).get("litellm_provider")
-        
 
     @property
     def instance_cost_limit(self) -> float:
