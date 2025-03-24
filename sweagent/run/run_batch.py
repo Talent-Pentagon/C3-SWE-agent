@@ -45,9 +45,9 @@ import yaml
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from rich.live import Live
-from sweagent import TRAJECTORY_DIR
 from swerex.deployment.hooks.status import SetStatusDeploymentHook
 
+from sweagent import TRAJECTORY_DIR
 from sweagent.agent.agents import AgentConfig, get_agent_from_config
 from sweagent.agent.hooks.status import SetStatusAgentHook
 from sweagent.environment.hooks.status import SetStatusEnvironmentHook
